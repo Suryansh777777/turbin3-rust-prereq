@@ -1,17 +1,19 @@
+mod programs;
 #[cfg(test)]
 mod tests {
+    use crate::programs::Turbine3_prereq::{CompleteArgs, Turbine3PrereqProgram, UpdateArgs};
     use bs58;
     use solana_client::rpc_client::RpcClient;
-    use solana_program::{pubkey::Pubkey, system_instruction::transfer};
+    use solana_program::{pubkey::Pubkey, system_instruction::transfer, system_program};
     use solana_sdk::{
         message::Message,
         signature::{read_keypair_file, Keypair, Signer},
         transaction::Transaction,
     };
-
     use std::io::{self, BufRead};
     const RPC_URL: &str = "https://api.devnet.solana.com";
     use std::str::FromStr;
+
     #[test]
     fn keygen() {
         let kp = Keypair::new();
@@ -89,7 +91,41 @@ mod tests {
 
     //Full Transfer
     //https://explorer.solana.com/tx/3sHha2fotGhVrSDYKEDt3ToFLmQdSdHYvyAZ4xuodW7jTzitXc8GYX6A1d99aGXsbcJ1EHvRG9i2Lz6GeyD2oq9z?cluster=devnet
-
+    #[test]
+    fn enroll() {
+        let rpc_client = RpcClient::new(RPC_URL);
+        let signer =
+            read_keypair_file("src/turbine3-wallet.json").expect("Couldn't find wallet file");
+        let prereq = Turbine3PrereqProgram::derive_program_address(&[
+            b"prereq",
+            signer.pubkey().to_bytes().as_ref(),
+        ]);
+        let args = UpdateArgs {
+            github: b"Suryansh777777".to_vec(),
+        };
+        //  blockhash
+        let blockhash = rpc_client
+            .get_latest_blockhash()
+            .expect("Failed to get recent blockhash");
+        let transaction = Turbine3PrereqProgram::update(
+            &[&signer.pubkey(), &prereq, &system_program::id()],
+            &args,
+            Some(&signer.pubkey()),
+            &[&signer],
+            blockhash,
+        );
+        let signature = rpc_client
+            .send_and_confirm_transaction(&transaction)
+            .expect("Failed to send transaction");
+        println!(
+            "Success! Check out your TX here:https://explorer.solana.com/tx/{}/?cluster=devnet",
+            signature
+        );
+    }
+    // Enrollment !!
+    //https://explorer.solana.com/tx/2g5VJ3iNU8ehnSDzne8LdizsZaQQ44PiPPa2WLnWXF7piWwNUMf77dqSy49Wdoi3NZkF1JgM3RnJHzqYwjeyUuLS?cluster=devnet
+    //Mistyped the github(updated to suryansh777777)
+    //https://explorer.solana.com/tx/G35T3FzvtRNF7Riowr5HM7sjUHJm7CvmYqJ3A5zwxJS4s8sxEGAbCofVfxZsHm16p98aVLJQpmTGK7FvFoCPgja?cluster=devnet
     #[test]
     fn base58_to_wallet() {
         println!("Input your private key as base58:");
