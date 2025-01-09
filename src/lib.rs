@@ -4,9 +4,11 @@ mod tests {
     use solana_client::rpc_client::RpcClient;
     use solana_program::{pubkey::Pubkey, system_instruction::transfer};
     use solana_sdk::{
+        message::Message,
         signature::{read_keypair_file, Keypair, Signer},
         transaction::Transaction,
     };
+
     use std::io::{self, BufRead};
     const RPC_URL: &str = "https://api.devnet.solana.com";
     use std::str::FromStr;
@@ -43,17 +45,36 @@ mod tests {
     #[test]
     fn transfer_sol() {
         let keypair = read_keypair_file("src/dev-wallet.json").expect("Couldn't find wallet file");
+
         let to_pubkey = Pubkey::from_str("6DKBzE6PyUBNBnBfqqdjj9AmFgZ6GY8iaGeD8f5HYYod").unwrap();
         let rpc_client = RpcClient::new(RPC_URL);
         let recent_blockhash = rpc_client
             .get_latest_blockhash()
             .expect("Failed to get recent blockhash");
+        let balance = rpc_client
+            .get_balance(&keypair.pubkey())
+            .expect("Failed to get balance");
+        // a test transaction to calculate fees
+        let message = Message::new_with_blockhash(
+            &[transfer(&keypair.pubkey(), &to_pubkey, balance)],
+            Some(&keypair.pubkey()),
+            &recent_blockhash,
+        );
+        let fee = rpc_client
+            .get_fee_for_message(&message)
+            .expect("Failed to get fee calculator");
         let transaction = Transaction::new_signed_with_payer(
-            &[transfer(&keypair.pubkey(), &to_pubkey, 1_000_000)],
+            &[transfer(&keypair.pubkey(), &to_pubkey, balance - fee)],
             Some(&keypair.pubkey()),
             &vec![&keypair],
             recent_blockhash,
         );
+        // let transaction = Transaction::new_signed_with_payer(
+        //     &[transfer(&keypair.pubkey(), &to_pubkey, 1_000_000)],
+        //     Some(&keypair.pubkey()),
+        //     &vec![&keypair],
+        //     recent_blockhash,
+        // );
         // Send the transaction
         let signature = rpc_client
             .send_and_confirm_transaction(&transaction)
@@ -67,6 +88,8 @@ mod tests {
     //https://explorer.solana.com/tx/5NNhGJyZYD5rrjftqTYpKcTnBkKo97E5zupBKfz1uEkUmsHhxD8UfYAPqknKDoHHAvrRpLXQUh54jVprghwo9fFb?cluster=devnet
 
     //Full Transfer
+    //https://explorer.solana.com/tx/3sHha2fotGhVrSDYKEDt3ToFLmQdSdHYvyAZ4xuodW7jTzitXc8GYX6A1d99aGXsbcJ1EHvRG9i2Lz6GeyD2oq9z?cluster=devnet
+
     #[test]
     fn base58_to_wallet() {
         println!("Input your private key as base58:");
