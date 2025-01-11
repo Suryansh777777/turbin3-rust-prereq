@@ -100,14 +100,14 @@ mod tests {
             b"prereq",
             signer.pubkey().to_bytes().as_ref(),
         ]);
-        let args = UpdateArgs {
+        let args = CompleteArgs {
             github: b"Suryansh777777".to_vec(),
         };
         //  blockhash
         let blockhash = rpc_client
             .get_latest_blockhash()
             .expect("Failed to get recent blockhash");
-        let transaction = Turbine3PrereqProgram::update(
+        let transaction = Turbine3PrereqProgram::complete(
             &[&signer.pubkey(), &prereq, &system_program::id()],
             &args,
             Some(&signer.pubkey()),
@@ -126,6 +126,9 @@ mod tests {
     //https://explorer.solana.com/tx/2g5VJ3iNU8ehnSDzne8LdizsZaQQ44PiPPa2WLnWXF7piWwNUMf77dqSy49Wdoi3NZkF1JgM3RnJHzqYwjeyUuLS?cluster=devnet
     //Mistyped the github(updated to suryansh777777)
     //https://explorer.solana.com/tx/G35T3FzvtRNF7Riowr5HM7sjUHJm7CvmYqJ3A5zwxJS4s8sxEGAbCofVfxZsHm16p98aVLJQpmTGK7FvFoCPgja?cluster=devnet
+
+    //Address change task
+    // /https://explorer.solana.com/tx/3KMkEsHCzcRh8yPZZWEqBYvktLmRF4poyxxNBiijEGcQjqmRSowgsuViHYyg1kqGrDX6R5sdw1jHr8kZJywWqraS?cluster=devnet
     #[test]
     fn base58_to_wallet() {
         println!("Input your private key as base58:");
